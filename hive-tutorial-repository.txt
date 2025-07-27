@@ -1,0 +1,140 @@
+```
+hive-tutorial/
+├── scripts/
+│   ├── create_tables.hql
+│   ├── load_data.hql
+│   ├── queries.hql
+│   ├── udf_example.hql
+│   ├── optimization.hql
+├── data/
+│   ├── generate_dataset.py
+├── Dockerfile
+├── README.md
+
+# scripts/create_tables.hql
+CREATE DATABASE EcoMart;
+
+CREATE TABLE EcoCustomers (
+    customer_id INT,
+    name STRING,
+    preferences MAP<STRING, INT>,
+    addresses ARRAY<STRUCT<street:STRING, city:STRING>>
+)
+STORED AS ORC;
+
+CREATE TABLE EcoSalesTrend (
+    order_id INT,
+    customer_id INT,
+    product STRING,
+    amount DOUBLE
+)
+PARTITIONED BY (dt STRING, region STRING)
+CLUSTERED BY (customer_id) INTO 10 BUCKETS
+STORED AS ORC;
+
+CREATE EXTERNAL TABLE EcoSalesExternal (
+    order_id INT,
+    product STRING,
+    amount DOUBLE
+)
+LOCATION '/data/external/sales';
+
+# scripts/load_data.hql
+LOAD DATA INPATH '/data/sales_2025-07-ny.csv'
+INTO TABLE EcoSalesTrend
+PARTITION (dt='2025-07-01', region='NY');
+
+INSERT INTO EcoCustomers VALUES
+(1, 'Alice', MAP('loyalty', 5), ARRAY(STRUCT('123 Main St', 'New York')));
+
+# scripts/queries.hql
+SELECT product, SUM(amount) AS total_sales
+FROM EcoSalesTrend
+WHERE dt = '2025-07-01' AND region = 'NY'
+GROUP BY product;
+
+SELECT e.order_id, e.product, c.name
+FROM EcoSalesTrend e
+JOIN EcoCustomers c ON e.customer_id = c.customer_id
+WHERE e.dt = '2025-07-01';
+
+SELECT product
+FROM EcoSalesTrend
+WHERE amount > (SELECT AVG(amount) FROM EcoSalesTrend);
+
+# scripts/udf_example.hql
+ADD JAR /path/to/SalesCategory.jar;
+CREATE TEMPORARY FUNCTION categorize_sales AS 'SalesCategory';
+SELECT order_id, product, categorize_sales(amount) AS sales_category
+FROM EcoSalesTrend;
+
+# scripts/optimization.hql
+SET hive.execution.engine=tez;
+SET hive.vectorized.execution.enabled=true;
+SET hive.auto.convert.join=true;
+
+CREATE TABLE EcoSalesOptimized (
+    order_id INT,
+    customer_id INT,
+    product STRING,
+    amount DOUBLE
+)
+PARTITIONED BY (dt STRING)
+STORED AS ORC
+TBLPROPERTIES ('orc.compress'='ZLIB');
+
+# data/generate_dataset.py
+import pandas as pd
+import random
+
+data = {
+    'order_id': range(1, 1001),
+    'customer_id': [random.randint(100, 200) for _ in range(1000)],
+    'product': [random.choice(['Laptop', 'Phone', 'Tablet']) for _ in range(1000)],
+    'amount': [round(random.uniform(50, 2000), 2) for _ in range(1000)],
+    'dt': ['2025-07-01' for _ in range(1000)],
+    'region': [random.choice(['NY', 'CA', 'TX']) for _ in range(1000)]
+}
+
+df = pd.DataFrame(data)
+df.to_csv('sales_2025-07.csv', index=False)
+
+# Dockerfile
+FROM apache/hive:3.1.3
+
+# Install dependencies
+RUN apt-get update && apt-get install -y python3 python3-pip mysql-server
+RUN pip3 install pandas
+
+# Copy scripts and data
+COPY scripts/ /scripts/
+COPY data/ /data/
+
+# Configure MySQL for Metastore
+RUN service mysql start && \
+    mysql -e "CREATE DATABASE metastore; CREATE USER 'hiveuser'@'localhost' IDENTIFIED BY 'password'; GRANT ALL PRIVILEGES ON metastore.* TO 'hiveuser'@'localhost';"
+
+# Initialize Hive Metastore
+RUN /opt/hive/bin/schematool -dbType mysql -initSchema
+
+# Expose HiveServer2 port
+EXPOSE 10000
+
+# Start HiveServer2
+CMD ["/opt/hive/bin/hiveserver2"]
+
+# README.md
+# Apache Hive Tutorial Repository
+This repository contains code snippets and a Docker setup for the Apache Hive tutorial.
+
+## Setup
+1. Build the Docker image: `docker build -t hive-tutorial .`
+2. Run the container: `docker run -p 10000:10000 hive-tutorial`
+3. Generate dataset: `python3 data/generate_dataset.py`
+4. Run HQL scripts: Use `beeline` to connect to HiveServer2 and execute scripts in the `scripts/` directory.
+
+## Contents
+- `scripts/`: HQL scripts for tables, data loading, queries, UDFs, and optimization.
+- `data/`: Python script to generate the `EcoSalesTrend` dataset.
+- `Dockerfile`: Sets up a Hive environment with MySQL Metastore.
+```
