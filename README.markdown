@@ -111,28 +111,15 @@ SET hive.vectorized.execution.enabled=true;
 - **File Not Found**: Verify that `sales_2025-07.csv` is generated in `/data/` before loading data.
 - **Beeline Connection**: Confirm HiveServer2 is running (`docker ps`) and use `jdbc:hive2://localhost:10000`.
 
-## Converting the Tutorial to .docx
-
-The tutorial (`apache_hive_tutorial.md`) is provided in Markdown format. To convert it to `.docx` without installing software:
-1. Visit [www.cloudxdocs.com](https://www.cloudxdocs.com).
-2. Upload `apache_hive_tutorial.md` or paste its content.
-3. Select `.docx` as the output format and enable the table of contents.
-4. Download the `.docx` file and verify formatting in Microsoft Word or Google Docs.
-5. Adjust fonts (e.g., Calibri) or colors (e.g., green for Pro-Tips) for a polished look.
-
-Alternative tools: [mconverter.eu](https://mconverter.eu) or [tomarkdown.dev](https://tomarkdown.dev).
 
 ## Additional Notes
 
 - **Dataset**: The `EcoSalesTrend` dataset is a fictional retail sales dataset designed for the tutorial, ensuring originality.
 - **Verifiability**: Run the HQL scripts in the Docker environment to verify query outputs, demonstrating the tutorial’s accuracy.
 - **Customization**: Modify table names (e.g., `EcoSalesTrend` to `GreenSalesWave`) or add your own data to the dataset generator for personalization.
-- **Feedback**: For issues or enhancements, create a GitHub issue or contact [your email].
+- **Feedback**: For issues or enhancements, create a GitHub issue or contact [ranasaurabh191@gmail.com].
 
-## License
-
-This repository is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-*Created for the Apache Hive tutorial, July 2025, by Your Name.*
+*Created for the Apache Hive tutorial, July 2025, by Your Saurabh Rana.*
